@@ -24,6 +24,9 @@
     button:hover:not(:disabled), .file-picker:hover { background: #e1e9f5; }
     button.primary { background: #2459a6; border-color: #2459a6; color: #fff; }
     button.primary:hover:not(:disabled) { background: #1c4a90; }
+    a.file-picker { display: inline-flex; align-items: center; text-decoration: none; }
+    a.file-picker.primary { background: #2459a6; border-color: #2459a6; color: #fff; }
+    a.file-picker.primary:hover { background: #1c4a90; }
     button:disabled { opacity: .48; cursor: not-allowed; }
     .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
     .inline { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
@@ -53,6 +56,15 @@
     <h1>WiFi Share Testing</h1>
     <p>Try sending a file directly between two browsers, even when they are in different countries. The file does not pass through this website. Keep both pages open during the transfer.</p>
   </header>
+
+  <section class="card" id="windows-app">
+    <h2>PocketBridge Windows app</h2>
+    <p class="muted">Download the full C# desktop app for sending files between devices on the same Wi-Fi. It runs separately from this browser experiment.</p>
+    <div class="actions">
+      <a class="file-picker primary" href="https://github.com/j4522419-code/wifi-share-testing/releases/latest/download/PocketBridge.exe">Download for Windows</a>
+      <a class="file-picker" href="https://github.com/j4522419-code/wifi-share-testing/tree/main/desktop/PocketBridge">View C# source</a>
+    </div>
+  </section>
 
   <section class="card">
     <div class="warning"><strong>Direct-connection privacy:</strong> this test can reveal your public IP address to the person you connect with and to the STUN service used to find a route. Only connect with someone you trust. The browser encrypts the peer-to-peer data channel, but this prototype has no relay fallback.</div>

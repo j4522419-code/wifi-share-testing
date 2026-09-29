@@ -1,0 +1,54 @@
+<Window x:Class="PocketBridgeDotNet.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PocketBridge" Height="640" Width="940" MinHeight="560" MinWidth="780"
+        Background="#F4F6FA" WindowStartupLocation="CenterScreen">
+  <Window.Resources>
+    <Style TargetType="Button">
+      <Setter Property="Padding" Value="14,9"/><Setter Property="Margin" Value="0,0,8,0"/>
+      <Setter Property="FontSize" Value="13"/><Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Background" Value="#E8EDF5"/><Setter Property="BorderBrush" Value="#D5DCE8"/>
+    </Style>
+    <Style TargetType="DataGridColumnHeader">
+      <Setter Property="Background" Value="#F5F7FA"/><Setter Property="Foreground" Value="#5D687A"/>
+      <Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Padding" Value="12,10"/>
+      <Setter Property="BorderThickness" Value="0,0,0,1"/><Setter Property="BorderBrush" Value="#E7EBF1"/>
+    </Style>
+  </Window.Resources>
+  <Grid Margin="30,25">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="16"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <StackPanel>
+      <TextBlock Text="PocketBridge" FontSize="28" FontWeight="Bold" Foreground="#172033"/>
+      <TextBlock Text="Send files between this PC, your phone, and other devices on the same Wi-Fi." Margin="0,4,0,0" FontSize="13" Foreground="#657187"/>
+    </StackPanel>
+    <Border Grid.Row="2" Background="White" CornerRadius="12" BorderBrush="#E1E6EF" BorderThickness="1" Padding="20">
+      <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <TextBlock Text="Available devices" FontSize="17" FontWeight="SemiBold" Foreground="#172033"/>
+        <TextBlock Grid.Row="1" x:Name="ThisDeviceText" Text="This device" Margin="0,4,0,14" Foreground="#69758A"/>
+        <DataGrid Grid.Row="2" x:Name="DeviceGrid" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                  HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#EEF1F5"
+                  Background="White" BorderBrush="#E7EBF1" SelectionMode="Single" SelectionUnit="FullRow"
+                  RowHeight="40" SelectionChanged="DeviceGrid_SelectionChanged">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="DEVICE" Binding="{Binding Name}" Width="*"/>
+            <DataGridTextColumn Header="TYPE" Binding="{Binding Type}" Width="180"/>
+            <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="140"/>
+          </DataGrid.Columns>
+        </DataGrid>
+        <DockPanel Grid.Row="3" Margin="0,16,0,0" LastChildFill="True">
+          <Button x:Name="SendButton" DockPanel.Dock="Right" Content="Send" Background="#2459A6" Foreground="White" BorderBrush="#2459A6" IsEnabled="False" Click="SendButton_Click"/>
+          <Button Content="Choose file…" Click="ChooseFile_Click"/>
+          <Button Content="Choose folder…" Click="ChooseFolder_Click"/>
+          <TextBlock x:Name="SelectionText" VerticalAlignment="Center" Text="No file or folder selected" Foreground="#69758A" TextTrimming="CharacterEllipsis"/>
+        </DockPanel>
+      </Grid>
+    </Border>
+    <Grid Grid.Row="3" Margin="0,14,0,0">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+      <TextBlock x:Name="StatusText" Text="Starting local device discovery…" VerticalAlignment="Center" Foreground="#596579" TextTrimming="CharacterEllipsis"/>
+      <Button Grid.Column="1" Content="Open received files" Click="OpenFolder_Click"/>
+      <Button Grid.Column="2" Content="Quick connect QR…" Margin="0" Click="PairButton_Click"/>
+    </Grid>
+  </Grid>
+</Window>

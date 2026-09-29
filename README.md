@@ -1,25 +1,23 @@
 # WiFi Share Testing
 
-A browser-based, free-to-host experiment for sending a small file directly between two browsers over the internet. The file travels over a WebRTC data channel, not through this website.
+This repository contains two separate ways to share files:
 
-## Try it
+## Windows desktop app (C#)
 
-1. Open the hosted page on both devices. Both people need to keep the page open and stay online.
-2. On the first device, accept the direct-connection warning and choose **Create a connection**. Copy the offer code and send it to the other person using a messaging app.
-3. On the second device, accept the warning, choose **Join a connection**, paste the offer, and create an answer code. Send that code back.
-4. Paste the answer on the first device and connect. Either person can then choose a file of up to 50 MB. The receiving person must approve it.
+The full PocketBridge Windows app source is in [`desktop/PocketBridge`](desktop/PocketBridge). It can send files and folders between a Windows PC and nearby devices on the same Wi-Fi network.
 
-Offer and answer codes contain WebRTC connection information, including network addresses. Share them only with the intended recipient. Direct mode can expose your public IP address to the peer and the STUN service. WebRTC encrypts data-channel traffic, but direct connections may fail on networks that require a relay. This prototype has no TURN or cloud-storage fallback and is not integrated with the PocketBridge Windows app.
+- [Download the latest Windows app](https://github.com/j4522419-code/wifi-share-testing/releases/latest/download/PocketBridge.exe)
+- [Browse the C# source](desktop/PocketBridge)
+- [Build instructions](desktop/PocketBridge/README.md)
 
-## Hosting
+The desktop app is local-network software. It does not use the website for transfers and it does not send files between countries.
 
-The page is static and can be hosted with GitHub Pages. Only the offer/answer codes are exchanged through another messaging app; GitHub Pages does not carry the files. A public STUN server helps the browsers find a direct route, but does not relay the file.
+## Browser experiment
 
-## Prototype limits
+The [hosted browser prototype](https://j4522419-code.github.io/wifi-share-testing/) tries direct browser-to-browser transfers using WebRTC. It is independent of the Windows app: people exchange connection codes manually, direct mode can reveal public IP addresses, and some networks block direct connections. It has no relay fallback.
 
-- One file at a time, up to 50 MB.
-- Both pages must remain open until the transfer finishes.
-- No relay fallback, offline delivery, folder transfer, QR pairing, or resume after a disconnect.
-- This proof of concept prioritizes zero server bandwidth cost over IP-address privacy and universal network compatibility.
+## Releasing the Windows app
 
-This repository does not assign an open-source license.
+Pushing a version tag such as `v1.0.0` starts a Windows build and attaches a self-contained `PocketBridge.exe` to a GitHub Release. A separate .NET installation is not needed to run that published build.
+
+This project does not assign an open-source license.
