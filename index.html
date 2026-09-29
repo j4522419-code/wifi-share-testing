@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f6fa">
-  <title>WiFi Share Testing — direct file transfer</title>
+  <title>PocketBridge — send files anywhere</title>
   <style>
     :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; color: #172033; background: #f4f6fa; }
     * { box-sizing: border-box; }
@@ -19,7 +19,7 @@
     .warning strong { color: #744b00; }
     label { display: block; font-weight: 650; margin: 16px 0 7px; }
     input[type="checkbox"] { width: 18px; height: 18px; vertical-align: middle; margin: 0 8px 2px 0; }
-    textarea { display: block; width: 100%; min-height: 116px; border: 1px solid #cbd4e1; border-radius: 9px; padding: 12px; resize: vertical; color: #25324a; background: #fbfcfe; font: 12px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace; overflow-wrap: anywhere; }
+    input[type="text"] { display: block; width: 100%; border: 1px solid #cbd4e1; border-radius: 9px; padding: 12px; color: #25324a; background: #fbfcfe; font: inherit; }
     button, .file-picker { border: 1px solid #cbd4e1; border-radius: 9px; background: #edf1f7; padding: 10px 14px; font: inherit; font-size: 14px; font-weight: 650; color: #23314a; cursor: pointer; }
     button:hover:not(:disabled), .file-picker:hover { background: #e1e9f5; }
     button.primary { background: #2459a6; border-color: #2459a6; color: #fff; }
@@ -28,7 +28,7 @@
     a.file-picker.primary { background: #2459a6; border-color: #2459a6; color: #fff; }
     a.file-picker.primary:hover { background: #1c4a90; }
     button:disabled { opacity: .48; cursor: not-allowed; }
-    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
     .inline { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
     .field { margin-top: 14px; }
     .field:first-child { margin-top: 0; }
@@ -44,6 +44,8 @@
     .meter::-webkit-progress-value { background: #3276cc; }
     .meter::-moz-progress-bar { background: #3276cc; }
     .small { font-size: 12px; }
+    .code { display: inline-block; border-radius: 8px; padding: 12px 16px; background: #edf1f7; color: #17335e; font: 700 23px/1.2 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .08em; overflow-wrap: anywhere; }
+    .qr { width: 220px; height: 220px; max-width: 100%; background: white; border: 1px solid #e1e6ef; border-radius: 8px; padding: 8px; }
     [hidden] { display: none !important; }
     footer { font-size: 12px; color: #788397; line-height: 1.6; margin: 22px 2px; }
     @media (max-width: 560px) { body { padding: 22px 12px 36px; } .card { padding: 17px; } .actions button { flex: 1; } }
@@ -52,14 +54,14 @@
 <body>
 <main>
   <header>
-    <div class="eyebrow">Free direct-transfer experiment</div>
-    <h1>WiFi Share Testing</h1>
-    <p>Try sending a file directly between two browsers, even when they are in different countries. The file does not pass through this website. Keep both pages open during the transfer.</p>
+    <div class="eyebrow">PocketBridge · direct transfer</div>
+    <h1 id="pageTitle">Send files anywhere</h1>
+    <p>Pair with a short code or QR, then send files directly between this device and another one over the internet. Keep both devices online with this page open.</p>
   </header>
 
   <section class="card" id="windows-app">
-    <h2>PocketBridge Windows app</h2>
-    <p class="muted">Download the full C# desktop app for sending files between devices on the same Wi-Fi. It runs separately from this browser experiment.</p>
+    <h2>PocketBridge for Windows</h2>
+    <p class="muted">The Windows app includes this cross-network mode as well as nearby Wi-Fi sharing.</p>
     <div class="actions">
       <a class="file-picker primary" href="https://github.com/j4522419-code/wifi-share-testing/releases/latest/download/PocketBridge.exe">Download for Windows</a>
       <a class="file-picker" href="https://github.com/j4522419-code/wifi-share-testing/tree/main/desktop/PocketBridge">View C# source</a>
@@ -67,45 +69,46 @@
   </section>
 
   <section class="card">
-    <div class="warning"><strong>Direct-connection privacy:</strong> this test can reveal your public IP address to the person you connect with and to the STUN service used to find a route. Only connect with someone you trust. The browser encrypts the peer-to-peer data channel, but this prototype has no relay fallback.</div>
-    <label><input id="privacyConsent" type="checkbox">I understand this is a direct connection and want to continue.</label>
+    <div class="warning"><strong>Direct connection:</strong> the other person and the STUN server can see your public IP address. A free PeerJS service helps the devices find each other, but file data travels directly between them and is encrypted by WebRTC. Restrictive routers can block direct connections, so some networks may not connect without a relay.</div>
+    <label><input id="privacyConsent" type="checkbox">I understand the direct-connection privacy and want to continue.</label>
     <div class="actions" id="roleButtons">
-      <button class="primary" id="startOffer" disabled>Create a connection</button>
-      <button id="startJoin" disabled>Join a connection</button>
+      <button class="primary" id="startOffer" disabled>Create a pairing code</button>
+      <button id="startJoin" disabled>Enter a pairing code</button>
     </div>
     <div class="status" id="mainStatus" role="status" aria-live="polite">Choose a role to begin.</div>
   </section>
 
   <section class="card" id="offerPanel" hidden>
-    <h2>1. Share this offer</h2>
-    <p class="muted">Copy the offer code and send it to the other person using a message. It contains connection details, so only share it with the person you intend to connect to.</p>
-    <div class="field"><textarea id="offerCode" readonly aria-label="Offer code"></textarea></div>
-    <div class="actions"><button id="copyOffer">Copy offer code</button><button id="cancelOffer">Cancel connection</button></div>
-    <h2>2. Enter their answer</h2>
-    <label for="answerInput">Answer code from the other person</label>
-    <textarea id="answerInput" spellcheck="false" autocomplete="off"></textarea>
-    <div class="actions"><button class="primary" id="applyAnswer">Connect</button></div>
+    <h2>Your pairing code</h2>
+    <p class="muted">Enter this code on the other device, or scan the QR code there. Only share it with the person you want to connect to.</p>
+    <div class="code" id="peerCode" aria-label="Your pairing code"></div>
+    <div class="actions"><button id="copyPeerCode">Copy code</button><button id="copyInviteLink">Copy pairing link</button><button id="cancelOffer">Stop pairing</button></div>
+    <div class="field"><canvas id="inviteQr" class="qr" width="220" height="220" aria-label="Pairing QR code"></canvas></div>
   </section>
 
   <section class="card" id="joinPanel" hidden>
-    <h2>Join someone’s connection</h2>
-    <label for="remoteOffer">Paste their offer code</label>
-    <textarea id="remoteOffer" spellcheck="false" autocomplete="off"></textarea>
-    <div class="actions"><button class="primary" id="makeAnswer">Create answer code</button><button id="cancelJoin">Cancel</button></div>
-    <div id="answerOutput" hidden>
-      <label for="answerCode">Send this answer code back to them</label>
-      <textarea id="answerCode" readonly aria-label="Answer code"></textarea>
-      <div class="actions"><button id="copyAnswer">Copy answer code</button></div>
-    </div>
+    <h2>Join a device</h2>
+    <label for="remoteCode">Pairing code from the other device</label>
+    <input type="text" id="remoteCode" spellcheck="false" autocomplete="off" maxlength="100" placeholder="Paste or type the code">
+    <div class="actions"><button class="primary" id="connectPeer">Connect</button><button id="cancelJoin">Cancel</button></div>
+  </section>
+
+  <section class="card" id="pairRequest" hidden>
+    <h2>Connection request</h2>
+    <p class="muted" id="pairRequestText"></p>
+    <div class="actions"><button class="primary" id="acceptPair">Accept connection</button><button id="declinePair">Decline</button></div>
   </section>
 
   <section class="card" id="transferPanel" hidden>
     <div class="inline"><h2 style="margin:0">Transfer</h2><span class="pill" id="connectionBadge">Connecting</span></div>
-    <p class="muted">Either person can send one file at a time. The recipient must approve each incoming file.</p>
+    <p class="muted">Either person can send files or a folder. The receiving device must approve each transfer. Direct mode is limited to 50 MB per file or folder ZIP.</p>
     <div class="field">
-      <label for="fileInput">Choose a file (up to 50 MB)</label>
-      <input id="fileInput" type="file">
-      <div class="actions"><button class="primary" id="sendFile" disabled>Send file</button></div>
+      <label>Choose files or a folder (50 MB maximum)</label>
+      <input id="fileInput" type="file" multiple hidden>
+      <input id="folderInput" type="file" webkitdirectory directory multiple hidden>
+      <div class="actions"><button id="chooseFiles">Choose files…</button><button id="chooseFolder">Choose folder…</button></div>
+      <p class="small muted" id="selectionText">Nothing selected</p>
+      <div class="actions"><button class="primary" id="sendFile" disabled>Send</button></div>
     </div>
     <div class="incoming" id="incomingBox" hidden>
       <p id="incomingText"></p>
@@ -117,244 +120,217 @@
   </section>
 
   <footer>
-    Files travel directly between browsers using WebRTC data channels. No PocketBridge server stores or relays them. Direct connections work on many networks, but restrictive routers may block them; this prototype has no paid relay. Both devices must stay online with this page open. Peer-to-peer data channels use DTLS encryption as part of WebRTC. See <a href="https://www.rfc-editor.org/rfc/rfc8827.html">RFC 8827</a>.
+    Files travel directly between devices using WebRTC data channels; they are not uploaded to this website or the pairing service. The pairing service sees temporary connection IDs and signaling details. WebRTC encrypts the data channel. Both devices must stay online with this page open. Direct connections can fail on restrictive networks; this free mode has no relay fallback.
   </footer>
 </main>
+<script src="vendor/peerjs.min.js"></script>
+<script src="vendor/qrcode.min.js"></script>
+<script src="vendor/jszip.min.js"></script>
 <script>
 (() => {
   'use strict';
 
   const MAX_FILE_BYTES = 50 * 1024 * 1024;
-  const CHUNK_BYTES = 16 * 1024;
-  const HIGH_WATER_BYTES = 512 * 1024;
-  const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
+  const CHUNK_BYTES = 16000;
+  const MAX_BUFFER_MESSAGES = 24;
   const $ = id => document.getElementById(id);
   const ui = {
     consent: $('privacyConsent'), startOffer: $('startOffer'), startJoin: $('startJoin'), mainStatus: $('mainStatus'),
-    offerPanel: $('offerPanel'), joinPanel: $('joinPanel'), transferPanel: $('transferPanel'), offerCode: $('offerCode'),
-    answerInput: $('answerInput'), remoteOffer: $('remoteOffer'), answerOutput: $('answerOutput'), answerCode: $('answerCode'),
-    connectionBadge: $('connectionBadge'), fileInput: $('fileInput'), sendFile: $('sendFile'), incomingBox: $('incomingBox'),
-    incomingText: $('incomingText'), transferProgress: $('transferProgress'), transferStatus: $('transferStatus')
+    offerPanel: $('offerPanel'), joinPanel: $('joinPanel'), transferPanel: $('transferPanel'),
+    peerCode: $('peerCode'), inviteQr: $('inviteQr'), remoteCode: $('remoteCode'),
+    pairRequest: $('pairRequest'), pairRequestText: $('pairRequestText'), connectionBadge: $('connectionBadge'),
+    fileInput: $('fileInput'), folderInput: $('folderInput'), selectionText: $('selectionText'), sendFile: $('sendFile'),
+    incomingBox: $('incomingBox'), incomingText: $('incomingText'),
+    transferProgress: $('transferProgress'), transferStatus: $('transferStatus')
   };
+  const desktopMode = new URLSearchParams(location.search).get('desktop') === '1';
+  const requestedPeerCode = new URLSearchParams(location.search).get('connect') || '';
+  if (desktopMode) {
+    $('windows-app').hidden = true;
+    $('pageTitle').textContent = 'Send files from PocketBridge';
+  }
+  if (requestedPeerCode) ui.remoteCode.value = requestedPeerCode;
 
   let peer = null;
-  let channel = null;
-  let role = null;
+  let activeConnection = null;
+  let pendingConnection = null;
+  let pendingRemoteCode = '';
   let senderDecision = null;
   let incomingFile = null;
   let senderBusy = false;
 
-  const showStatus = (text, kind = '') => {
+  const showStatus = (text, kind) => {
     ui.mainStatus.textContent = text;
-    ui.mainStatus.className = `status ${kind}`.trim();
+    ui.mainStatus.className = ('status ' + (kind || '')).trim();
   };
-  const showTransferStatus = (text, kind = '') => {
+  const showTransferStatus = (text, kind) => {
     ui.transferStatus.textContent = text;
-    ui.transferStatus.className = `status ${kind}`.trim();
+    ui.transferStatus.className = ('status ' + (kind || '')).trim();
   };
   const formatSize = bytes => bytes < 1024 * 1024
-    ? `${(bytes / 1024).toFixed(0)} KB`
-    : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    ? Math.round(bytes / 1024) + ' KB'
+    : (bytes / 1024 / 1024).toFixed(1) + ' MB';
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const currentDeviceName = () => (navigator.userAgent.includes('Windows') ? 'Windows PC' : 'Phone or tablet');
 
   ui.consent.addEventListener('change', () => {
     ui.startOffer.disabled = !ui.consent.checked;
     ui.startJoin.disabled = !ui.consent.checked;
   });
 
-  function encodeCode(description) {
-    const bytes = encoder.encode(JSON.stringify({ type: description.type, sdp: description.sdp }));
-    let binary = '';
-    for (const byte of bytes) binary += String.fromCharCode(byte);
-    return `WST1-${btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')}`;
+  function inviteUrl(id) {
+    const url = new URL(location.href);
+    url.searchParams.delete('desktop');
+    url.searchParams.set('connect', id);
+    return url.toString();
   }
 
-  function decodeCode(value, expectedType) {
-    const code = value.trim().replace(/\s+/g, '');
-    if (!code.startsWith('WST1-') || code.length > 100000) throw new Error('That does not look like a valid WiFi Share Testing code.');
-    const base64 = code.slice(5).replace(/-/g, '+').replace(/_/g, '/');
-    const binary = atob(base64 + '='.repeat((4 - base64.length % 4) % 4));
-    const bytes = Uint8Array.from(binary, ch => ch.charCodeAt(0));
-    const valueObject = JSON.parse(decoder.decode(bytes));
-    if (valueObject.type !== expectedType || typeof valueObject.sdp !== 'string' || !valueObject.sdp.startsWith('v=0')) {
-      throw new Error(`Expected a ${expectedType} code. Check that you copied the whole code.`);
+  function startPeer() {
+    if (peer && !peer.destroyed) return;
+    if (typeof window.Peer !== 'function') throw new Error('The pairing library did not load. Reload this page and try again.');
+    peer = new window.Peer(undefined, {
+      host: '0.peerjs.com',
+      port: 443,
+      secure: true,
+      debug: 0,
+      config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
+    });
+    peer.on('open', id => {
+      ui.peerCode.textContent = id;
+      ui.offerPanel.hidden = false;
+      const link = inviteUrl(id);
+      window.QRCode.toCanvas(ui.inviteQr, link, { width: 220, margin: 2, errorCorrectionLevel: 'M' })
+        .catch(() => showStatus('Pairing code is ready. The QR could not be drawn; use the code instead.', 'error'));
+      if (pendingRemoteCode) connectToPeer(pendingRemoteCode);
+      else showStatus('Pairing code ready. Enter it on the other device or scan the QR.', 'ok');
+    });
+    peer.on('connection', connection => watchConnection(connection, true));
+    peer.on('error', error => {
+      const messages = {
+        'peer-unavailable': 'That pairing code is not online. Check the code and keep the other device open.',
+        'network': 'Could not reach the free pairing service. Check the internet connection and try again.',
+        'webrtc': 'The network could not make a direct route. A relay would be needed for this network.'
+      };
+      showStatus(messages[error.type] || ('Connection setup failed: ' + error.type + '.'), 'error');
+    });
+  }
+
+  function connectToPeer(code) {
+    if (!peer || peer.destroyed) {
+      pendingRemoteCode = code;
+      try { startPeer(); } catch (error) { showStatus(error.message, 'error'); }
+      return;
     }
-    return { type: valueObject.type, sdp: valueObject.sdp };
+    pendingRemoteCode = '';
+    ui.startJoin.disabled = true;
+    showStatus('Contacting the other device…');
+    const connection = peer.connect(code, {
+      reliable: true,
+      metadata: { name: currentDeviceName() }
+    });
+    watchConnection(connection, false);
   }
 
-  function waitForIceGathering(pc) {
-    if (pc.iceGatheringState === 'complete') return Promise.resolve();
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        pc.removeEventListener('icegatheringstatechange', changed);
-        reject(new Error('Network route discovery took too long. Try again on a different network.'));
-      }, 25000);
-      function changed() {
-        if (pc.iceGatheringState === 'complete') {
-          clearTimeout(timeout);
-          pc.removeEventListener('icegatheringstatechange', changed);
-          resolve();
-        }
+  function watchConnection(connection, incoming) {
+    if (activeConnection || pendingConnection) {
+      connection.close();
+      return;
+    }
+    pendingConnection = connection;
+    connection.on('open', () => {
+      if (pendingConnection !== connection) return;
+      if (incoming) {
+        const name = connection.metadata && typeof connection.metadata.name === 'string'
+          ? connection.metadata.name.slice(0, 60) : 'Another device';
+        ui.pairRequestText.textContent = name + ' wants to pair. Accept only if you recognize this connection.';
+        ui.pairRequest.hidden = false;
+        showStatus('A device is asking to pair. Approve the request to continue.');
+      } else {
+        showStatus('Connected to the other device. Waiting for it to accept the pairing request…');
       }
-      pc.addEventListener('icegatheringstatechange', changed);
-      changed();
+    });
+    connection.on('data', data => handleDataMessage(connection, data));
+    connection.on('close', () => {
+      if (pendingConnection === connection) pendingConnection = null;
+      if (activeConnection === connection) activeConnection = null;
+      if (!ui.transferPanel.hidden) resetTransferPanel('The other device closed the connection.');
+    });
+    connection.on('error', () => {
+      showStatus('The direct connection failed. The other network may block peer-to-peer traffic.', 'error');
     });
   }
 
-  function makePeerConnection() {
-    peer = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
-      iceCandidatePoolSize: 1
-    });
-    peer.onconnectionstatechange = () => {
-      const state = peer?.connectionState || 'closed';
-      ui.connectionBadge.textContent = state === 'connected' ? 'Connected' : state;
-      ui.connectionBadge.classList.toggle('connected', state === 'connected');
-      if (state === 'failed') showTransferStatus('Direct connection failed. One of the networks may require a relay, which this free prototype does not provide.', 'error');
-      else if (state === 'disconnected') showTransferStatus('Connection interrupted. Keep both pages open while it reconnects.', 'error');
-    };
-    peer.oniceconnectionstatechange = () => {
-      if (peer?.iceConnectionState === 'failed') showStatus('Could not find a direct route between these networks. This prototype has no relay fallback.', 'error');
-    };
-    peer.ondatachannel = event => setDataChannel(event.channel);
-    return peer;
+  function sendControl(connection, message) {
+    if (!connection || !connection.open) throw new Error('The direct connection is not open.');
+    connection.send(JSON.stringify(message));
   }
 
-  function setDataChannel(nextChannel) {
-    channel = nextChannel;
-    channel.binaryType = 'arraybuffer';
-    channel.bufferedAmountLowThreshold = 128 * 1024;
-    channel.onopen = () => {
-      ui.offerPanel.hidden = true;
-      ui.joinPanel.hidden = true;
-      ui.transferPanel.hidden = false;
-      ui.connectionBadge.textContent = 'Connected';
-      ui.connectionBadge.classList.add('connected');
-      showStatus('Connected directly. Files go between the two browsers.', 'ok');
-      showTransferStatus('Ready to send or receive a file.');
-    };
-    channel.onclose = () => {
-      ui.connectionBadge.textContent = 'Disconnected';
-      ui.connectionBadge.classList.remove('connected');
-      if (ui.transferPanel.hidden === false) showTransferStatus('The other person closed the connection.', 'error');
-    };
-    channel.onerror = () => showTransferStatus('The direct connection reported a data-channel error.', 'error');
-    channel.onmessage = handleDataMessage;
+  function activateConnection(connection) {
+    if (pendingConnection !== connection) return;
+    activeConnection = connection;
+    pendingConnection = null;
+    ui.offerPanel.hidden = true;
+    ui.joinPanel.hidden = true;
+    ui.pairRequest.hidden = true;
+    ui.transferPanel.hidden = false;
+    ui.connectionBadge.textContent = 'Connected directly';
+    ui.connectionBadge.classList.add('connected');
+    showStatus('Paired. Files travel directly between the two devices.', 'ok');
+    showTransferStatus('Ready to send or receive a file.');
+    updateSendButton();
   }
 
-  function sendControl(message) {
-    if (!channel || channel.readyState !== 'open') throw new Error('The direct connection is not open.');
-    channel.send(JSON.stringify(message));
-  }
-
-  async function createOffer() {
-    role = 'offerer';
-    ui.startOffer.disabled = true;
-    ui.startJoin.disabled = true;
-    ui.offerPanel.hidden = false;
-    showStatus('Finding a direct route…');
-    try {
-      const pc = makePeerConnection();
-      setDataChannel(pc.createDataChannel('file-transfer', { ordered: true }));
-      await pc.setLocalDescription(await pc.createOffer());
-      await waitForIceGathering(pc);
-      ui.offerCode.value = encodeCode(pc.localDescription);
-      showStatus('Offer ready. Send it to the person you want to connect with.');
-    } catch (error) {
-      showStatus(error.message || 'Could not create an offer.', 'error');
-      closePeer(false);
-    } finally {
-      ui.startOffer.disabled = !ui.consent.checked;
-      ui.startJoin.disabled = !ui.consent.checked;
-    }
-  }
-
-  async function joinOffer() {
-    role = 'answerer';
-    ui.startOffer.disabled = true;
-    ui.startJoin.disabled = true;
-    ui.joinPanel.hidden = false;
-    showStatus('Enter the offer code from the other person.');
-  }
-
-  async function createAnswer() {
-    const button = $('makeAnswer');
-    button.disabled = true;
-    showStatus('Finding a direct route…');
-    try {
-      const pc = makePeerConnection();
-      await pc.setRemoteDescription(decodeCode(ui.remoteOffer.value, 'offer'));
-      await pc.setLocalDescription(await pc.createAnswer());
-      await waitForIceGathering(pc);
-      ui.answerCode.value = encodeCode(pc.localDescription);
-      ui.answerOutput.hidden = false;
-      showStatus('Answer ready. Send it back to the person who created the offer.');
-    } catch (error) {
-      showStatus(error.message || 'Could not create an answer.', 'error');
-      closePeer(false);
-    } finally {
-      button.disabled = false;
-    }
-  }
-
-  async function applyAnswer() {
-    const button = $('applyAnswer');
-    button.disabled = true;
-    try {
-      if (!peer || role !== 'offerer') throw new Error('Create an offer first.');
-      await peer.setRemoteDescription(decodeCode(ui.answerInput.value, 'answer'));
-      showStatus('Answer accepted. Connecting directly…');
-    } catch (error) {
-      showStatus(error.message || 'Could not use that answer.', 'error');
-    } finally {
-      button.disabled = false;
-    }
-  }
-
-  function waitForSenderDecision(id) {
-    return new Promise(resolve => {
-      const timeout = setTimeout(() => {
-        if (senderDecision?.id === id) senderDecision = null;
-        resolve(false);
-      }, 120000);
-      senderDecision = { id, resolve: accepted => { clearTimeout(timeout); senderDecision = null; resolve(accepted); } };
-    });
-  }
-
-  function handleDataMessage(event) {
-    if (typeof event.data === 'string') {
+  function handleDataMessage(connection, data) {
+    if (typeof data === 'string') {
       let message;
-      try { message = JSON.parse(event.data); } catch { showTransferStatus('Received an unreadable transfer message.', 'error'); return; }
+      try { message = JSON.parse(data); } catch { showTransferStatus('Received an unreadable transfer message.', 'error'); return; }
+      if (message.type === 'pair-decision' && pendingConnection === connection) {
+        if (message.accept) activateConnection(connection);
+        else {
+          connection.close();
+          pendingConnection = null;
+          showStatus('The other device declined the pairing request.', 'error');
+        }
+        return;
+      }
+      if (connection !== activeConnection) return;
       if (message.type === 'file-offer') {
         if (incomingFile || senderBusy || !Number.isSafeInteger(message.size) || message.size < 0 || message.size > MAX_FILE_BYTES || typeof message.name !== 'string') {
-          try { sendControl({ type: 'file-decision', id: message.id, accept: false, reason: 'busy or file too large' }); } catch { }
+          try { sendControl(connection, { type: 'file-decision', id: message.id, accept: false }); } catch { }
           return;
         }
-        incomingFile = { id: message.id, name: message.name.slice(0, 240), size: message.size, mime: typeof message.mime === 'string' ? message.mime : 'application/octet-stream', chunks: [], received: 0 };
-        ui.incomingText.textContent = `${incomingFile.name} (${formatSize(incomingFile.size)}) wants to be sent to this device.`;
+        incomingFile = {
+          id: message.id, name: message.name.slice(0, 240), size: message.size,
+          mime: typeof message.mime === 'string' ? message.mime : 'application/octet-stream',
+          chunks: [], received: 0
+        };
+        ui.incomingText.textContent = incomingFile.name + ' (' + formatSize(incomingFile.size) + ') wants to be sent to this device.';
         ui.incomingBox.hidden = false;
         showTransferStatus('Waiting for your approval.');
-      } else if (message.type === 'file-decision' && senderDecision?.id === message.id) {
+      } else if (message.type === 'file-decision' && senderDecision && senderDecision.id === message.id) {
         senderDecision.resolve(Boolean(message.accept));
-      } else if (message.type === 'file-finished' && incomingFile?.id === message.id) {
+      } else if (message.type === 'file-finished' && incomingFile && incomingFile.id === message.id) {
         finishIncomingFile();
       }
       return;
     }
-    if (!incomingFile || !(event.data instanceof ArrayBuffer)) return;
-    incomingFile.chunks.push(new Uint8Array(event.data));
-    incomingFile.received += event.data.byteLength;
+    if (connection !== activeConnection || !incomingFile) return;
+    let bytes = null;
+    if (data instanceof ArrayBuffer) bytes = new Uint8Array(data);
+    else if (ArrayBuffer.isView(data)) bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    if (!bytes) return;
+    incomingFile.chunks.push(bytes);
+    incomingFile.received += bytes.byteLength;
     ui.transferProgress.hidden = false;
     ui.transferProgress.value = incomingFile.size ? Math.min(100, incomingFile.received / incomingFile.size * 100) : 100;
-    showTransferStatus(`Receiving ${incomingFile.name}: ${formatSize(incomingFile.received)} of ${formatSize(incomingFile.size)}.`);
+    showTransferStatus('Receiving ' + incomingFile.name + ': ' + formatSize(incomingFile.received) + ' of ' + formatSize(incomingFile.size) + '.');
   }
 
   function finishIncomingFile() {
     const file = incomingFile;
     if (!file) return;
     if (file.received !== file.size) {
-      showTransferStatus(`Transfer ended early (${formatSize(file.received)} of ${formatSize(file.size)} received).`, 'error');
+      showTransferStatus('Transfer ended early (' + formatSize(file.received) + ' of ' + formatSize(file.size) + ' received).', 'error');
       incomingFile = null;
       ui.incomingBox.hidden = true;
       return;
@@ -366,131 +342,219 @@
     anchor.download = file.name;
     anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 60000);
-    showTransferStatus(`Received ${file.name}. Your browser should save or open it now.`, 'ok');
+    showTransferStatus('Received ' + file.name + '. Your device should save it now.', 'ok');
     incomingFile = null;
     ui.incomingBox.hidden = true;
     ui.transferProgress.hidden = true;
   }
 
-  function waitForBuffer() {
-    if (!channel || channel.readyState !== 'open') return Promise.reject(new Error('Connection closed during transfer.'));
-    if (channel.bufferedAmount < HIGH_WATER_BYTES) return Promise.resolve();
+  function waitForSenderDecision(id) {
     return new Promise(resolve => {
-      const done = () => { clearTimeout(timeout); channel?.removeEventListener('bufferedamountlow', done); resolve(); };
-      const timeout = setTimeout(done, 5000);
-      channel.addEventListener('bufferedamountlow', done, { once: true });
-      if (channel.bufferedAmount < HIGH_WATER_BYTES) done();
+      const timeout = setTimeout(() => {
+        if (senderDecision && senderDecision.id === id) senderDecision = null;
+        resolve(false);
+      }, 120000);
+      senderDecision = {
+        id,
+        resolve: accepted => {
+          clearTimeout(timeout);
+          senderDecision = null;
+          resolve(accepted);
+        }
+      };
     });
   }
 
-  async function sendSelectedFile() {
-    const file = ui.fileInput.files?.[0];
-    if (!file || !channel || channel.readyState !== 'open' || senderBusy) return;
-    if (file.size > MAX_FILE_BYTES) {
-      showTransferStatus('This test is limited to files up to 50 MB.', 'error');
-      return;
-    }
-    senderBusy = true;
-    ui.sendFile.disabled = true;
-    const id = crypto.randomUUID();
+  async function waitForBuffer() {
+    while (activeConnection && activeConnection.open && activeConnection.bufferSize > MAX_BUFFER_MESSAGES) await wait(25);
+    if (!activeConnection || !activeConnection.open) throw new Error('Connection closed during transfer.');
+  }
+
+  async function sendOneFile(file) {
+    if (file.size > MAX_FILE_BYTES) throw new Error(file.name + ' is larger than the 50 MB limit.');
+    const id = window.crypto.randomUUID();
     ui.transferProgress.hidden = false;
     ui.transferProgress.value = 0;
+    sendControl(activeConnection, { type: 'file-offer', id, name: file.name, size: file.size, mime: file.type || 'application/octet-stream' });
+    showTransferStatus('Waiting for the recipient to approve ' + file.name + '…');
+    const allowed = await waitForSenderDecision(id);
+    if (!allowed) throw new Error('The transfer was declined, or approval timed out.');
+    for (let offset = 0; offset < file.size; offset += CHUNK_BYTES) {
+      await waitForBuffer();
+      const bytes = await file.slice(offset, Math.min(file.size, offset + CHUNK_BYTES)).arrayBuffer();
+      activeConnection.send(bytes);
+      const sent = Math.min(file.size, offset + bytes.byteLength);
+      ui.transferProgress.value = file.size ? sent / file.size * 100 : 100;
+      showTransferStatus('Sending ' + file.name + ': ' + formatSize(sent) + ' of ' + formatSize(file.size) + '.');
+    }
+    sendControl(activeConnection, { type: 'file-finished', id });
+    showTransferStatus('Sent ' + file.name + '.', 'ok');
+  }
+
+  async function selectedTransferFiles() {
+    if (ui.folderInput.files && ui.folderInput.files.length) {
+      const source = Array.from(ui.folderInput.files);
+      const total = source.reduce((sum, file) => sum + file.size, 0);
+      if (total > MAX_FILE_BYTES) throw new Error('The folder contents must be 50 MB or smaller before compression.');
+      if (source.length > 5000) throw new Error('This folder contains too many files (5,000 maximum).');
+      const zip = new window.JSZip();
+      for (const file of source) zip.file(file.webkitRelativePath || file.name, file);
+      showTransferStatus('Compressing the selected folder…');
+      const content = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 3 } });
+      if (content.size > MAX_FILE_BYTES) throw new Error('The folder ZIP is larger than the 50 MB limit.');
+      const rootName = (source[0].webkitRelativePath || source[0].name).split('/')[0] || 'Folder';
+      return [new File([content], rootName + '.zip', { type: 'application/zip' })];
+    }
+    return Array.from(ui.fileInput.files || []);
+  }
+
+  async function sendSelectedFiles() {
+    if (!activeConnection || !activeConnection.open || senderBusy) return;
+    senderBusy = true;
+    ui.sendFile.disabled = true;
     try {
-      sendControl({ type: 'file-offer', id, name: file.name, size: file.size, mime: file.type || 'application/octet-stream' });
-      showTransferStatus(`Waiting for the recipient to approve ${file.name}…`);
-      const allowed = await waitForSenderDecision(id);
-      if (!allowed) throw new Error('The transfer was declined, or approval timed out.');
-      for (let offset = 0; offset < file.size; offset += CHUNK_BYTES) {
-        await waitForBuffer();
-        const bytes = await file.slice(offset, Math.min(file.size, offset + CHUNK_BYTES)).arrayBuffer();
-        channel.send(bytes);
-        const sent = Math.min(file.size, offset + bytes.byteLength);
-        ui.transferProgress.value = file.size ? sent / file.size * 100 : 100;
-        showTransferStatus(`Sending ${file.name}: ${formatSize(sent)} of ${formatSize(file.size)}.`);
-      }
-      sendControl({ type: 'file-finished', id });
-      showTransferStatus(`Sent ${file.name}.`, 'ok');
+      const files = await selectedTransferFiles();
+      if (!files.length) throw new Error('Choose a file or folder first.');
+      for (const file of files) await sendOneFile(file);
     } catch (error) {
       showTransferStatus(error.message || 'The transfer failed.', 'error');
     } finally {
       senderBusy = false;
-      ui.sendFile.disabled = !ui.fileInput.files?.length || channel?.readyState !== 'open';
       ui.transferProgress.hidden = true;
+      updateSendButton();
     }
   }
 
-  function closePeer(resetUi = true) {
+  function updateSendButton() {
+    const hasFiles = (ui.fileInput.files && ui.fileInput.files.length) || (ui.folderInput.files && ui.folderInput.files.length);
+    ui.sendFile.disabled = !hasFiles || !activeConnection || !activeConnection.open || senderBusy;
+  }
+
+  function resetTransferPanel(message) {
+    ui.transferPanel.hidden = true;
+    ui.connectionBadge.textContent = 'Disconnected';
+    ui.connectionBadge.classList.remove('connected');
+    ui.incomingBox.hidden = true;
+    ui.transferProgress.hidden = true;
+    incomingFile = null;
+    showTransferStatus(message || '');
+    showStatus(message || 'Connection closed. Choose a role to begin.');
+  }
+
+  function closePeer() {
     if (senderDecision) senderDecision.resolve(false);
     senderDecision = null;
     incomingFile = null;
     senderBusy = false;
-    try { channel?.close(); } catch { }
-    try { peer?.close(); } catch { }
-    channel = null;
+    try { pendingConnection && pendingConnection.close(); } catch { }
+    try { activeConnection && activeConnection.close(); } catch { }
+    try { peer && peer.destroy(); } catch { }
     peer = null;
-    role = null;
-    if (resetUi) {
-      ui.offerPanel.hidden = true;
-      ui.joinPanel.hidden = true;
-      ui.transferPanel.hidden = true;
-      ui.offerCode.value = '';
-      ui.answerInput.value = '';
-      ui.remoteOffer.value = '';
-      ui.answerCode.value = '';
-      ui.answerOutput.hidden = true;
-      ui.incomingBox.hidden = true;
-      ui.transferProgress.hidden = true;
-      ui.fileInput.value = '';
-      ui.sendFile.disabled = true;
-      ui.startOffer.disabled = !ui.consent.checked;
-      ui.startJoin.disabled = !ui.consent.checked;
-      ui.connectionBadge.textContent = 'Disconnected';
-      ui.connectionBadge.classList.remove('connected');
-      showStatus('Connection closed. Choose a role to begin.');
-      showTransferStatus('');
-    }
+    activeConnection = null;
+    pendingConnection = null;
+    pendingRemoteCode = '';
+    ui.offerPanel.hidden = true;
+    ui.joinPanel.hidden = true;
+    ui.pairRequest.hidden = true;
+    ui.transferPanel.hidden = true;
+    ui.peerCode.textContent = '';
+    ui.fileInput.value = '';
+    ui.folderInput.value = '';
+    ui.selectionText.textContent = 'Nothing selected';
+    ui.sendFile.disabled = true;
+    ui.startOffer.disabled = !ui.consent.checked;
+    ui.startJoin.disabled = !ui.consent.checked;
+    ui.connectionBadge.textContent = 'Disconnected';
+    ui.connectionBadge.classList.remove('connected');
+    showStatus('Connection closed. Choose a role to begin.');
+    showTransferStatus('');
   }
 
-  async function copyText(text, label) {
-    try {
-      await navigator.clipboard.writeText(text);
-      showStatus(`${label} copied. Send it only to the person you are connecting with.`, 'ok');
-    } catch {
-      showStatus(`Clipboard access was blocked. Select and copy the ${label.toLowerCase()} manually.`, 'error');
-    }
-  }
-
-  ui.startOffer.addEventListener('click', createOffer);
-  ui.startJoin.addEventListener('click', joinOffer);
-  $('makeAnswer').addEventListener('click', createAnswer);
-  $('applyAnswer').addEventListener('click', applyAnswer);
-  $('copyOffer').addEventListener('click', () => copyText(ui.offerCode.value, 'Offer code'));
-  $('copyAnswer').addEventListener('click', () => copyText(ui.answerCode.value, 'Answer code'));
-  $('cancelOffer').addEventListener('click', () => closePeer(true));
-  $('cancelJoin').addEventListener('click', () => closePeer(true));
-  $('closeConnection').addEventListener('click', () => closePeer(true));
+  $('startOffer').addEventListener('click', () => {
+    ui.startOffer.disabled = true;
+    ui.startJoin.disabled = true;
+    ui.offerPanel.hidden = false;
+    showStatus('Connecting to the free pairing service…');
+    try { startPeer(); } catch (error) { showStatus(error.message, 'error'); }
+  });
+  $('startJoin').addEventListener('click', () => {
+    const code = ui.remoteCode.value.trim();
+    if (!code) { showStatus('Enter the other device’s pairing code.', 'error'); return; }
+    ui.startOffer.disabled = true;
+    ui.startJoin.disabled = true;
+    ui.joinPanel.hidden = false;
+    pendingRemoteCode = code;
+    showStatus('Connecting to the free pairing service…');
+    try { startPeer(); } catch (error) { showStatus(error.message, 'error'); }
+    if (peer && peer.id) connectToPeer(code);
+  });
+  $('connectPeer').addEventListener('click', () => {
+    const code = ui.remoteCode.value.trim();
+    if (!code) { showStatus('Enter the other device’s pairing code.', 'error'); return; }
+    if (!peer || !peer.id) { pendingRemoteCode = code; showStatus('Waiting for the pairing service…'); return; }
+    connectToPeer(code);
+  });
+  $('copyPeerCode').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(ui.peerCode.textContent); showStatus('Pairing code copied. Share it only with the person you want to connect to.', 'ok'); }
+    catch { showStatus('Select and copy the pairing code manually.', 'error'); }
+  });
+  $('copyInviteLink').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(inviteUrl(ui.peerCode.textContent)); showStatus('Pairing link copied. Share it only with the intended recipient.', 'ok'); }
+    catch { showStatus('Clipboard access was blocked. Scan the QR or share the code manually.', 'error'); }
+  });
+  $('cancelOffer').addEventListener('click', closePeer);
+  $('cancelJoin').addEventListener('click', closePeer);
+  $('acceptPair').addEventListener('click', () => {
+    if (!pendingConnection) return;
+    try { sendControl(pendingConnection, { type: 'pair-decision', accept: true }); activateConnection(pendingConnection); }
+    catch (error) { showStatus(error.message, 'error'); }
+  });
+  $('declinePair').addEventListener('click', () => {
+    if (!pendingConnection) return;
+    try { sendControl(pendingConnection, { type: 'pair-decision', accept: false }); } catch { }
+    pendingConnection.close();
+    pendingConnection = null;
+    ui.pairRequest.hidden = true;
+    showStatus('Pairing request declined.');
+  });
+  $('closeConnection').addEventListener('click', closePeer);
   $('acceptFile').addEventListener('click', () => {
     if (!incomingFile) return;
     try {
-      sendControl({ type: 'file-decision', id: incomingFile.id, accept: true });
+      sendControl(activeConnection, { type: 'file-decision', id: incomingFile.id, accept: true });
       ui.incomingBox.hidden = true;
-      showTransferStatus(`Receiving ${incomingFile.name}…`);
+      showTransferStatus('Receiving ' + incomingFile.name + '…');
     } catch (error) { showTransferStatus(error.message, 'error'); }
   });
   $('declineFile').addEventListener('click', () => {
     if (!incomingFile) return;
-    try { sendControl({ type: 'file-decision', id: incomingFile.id, accept: false }); } catch { }
+    try { sendControl(activeConnection, { type: 'file-decision', id: incomingFile.id, accept: false }); } catch { }
     incomingFile = null;
     ui.incomingBox.hidden = true;
     showTransferStatus('Transfer declined.');
   });
-  ui.fileInput.addEventListener('change', () => {
-    const file = ui.fileInput.files?.[0];
-    ui.sendFile.disabled = !file || channel?.readyState !== 'open';
-    if (file && file.size > MAX_FILE_BYTES) showTransferStatus('This test is limited to files up to 50 MB.', 'error');
-    else if (file) showTransferStatus(`${file.name} is ready to send. The recipient will be asked to approve it.`);
-  });
-  ui.sendFile.addEventListener('click', sendSelectedFile);
+  $('chooseFiles').addEventListener('click', () => ui.fileInput.click());
+  $('chooseFolder').addEventListener('click', () => ui.folderInput.click());
+  const selectionChanged = event => {
+    if (event.currentTarget === ui.fileInput) ui.folderInput.value = '';
+    else ui.fileInput.value = '';
+    const files = Array.from(event.currentTarget.files || []);
+    const total = files.reduce((sum, file) => sum + file.size, 0);
+    ui.selectionText.textContent = files.length
+      ? files.length + ' item(s) selected · ' + formatSize(total) + (event.currentTarget === ui.folderInput ? ' before ZIP compression' : '')
+      : 'Nothing selected';
+    if (files.length && event.currentTarget !== ui.folderInput && files.some(file => file.size > MAX_FILE_BYTES))
+      showTransferStatus('Each file must be 50 MB or smaller.', 'error');
+    else if (files.length) showTransferStatus('Ready. The receiving device will be asked before each file is sent.');
+    updateSendButton();
+  };
+  ui.fileInput.addEventListener('change', selectionChanged);
+  ui.folderInput.addEventListener('change', selectionChanged);
+  ui.sendFile.addEventListener('click', sendSelectedFiles);
+  const initialCode = ui.remoteCode.value;
+  ui.startOffer.disabled = !ui.consent.checked;
+  ui.startJoin.disabled = !ui.consent.checked;
+  if (initialCode) showStatus('A pairing code was filled from the link. Review the direct-connection notice, then connect.');
 })();
 </script>
 </body>

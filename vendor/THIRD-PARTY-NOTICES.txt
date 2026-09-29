@@ -1,0 +1,8 @@
+PocketBridge vendors these browser libraries for its static transfer page:
+
+- PeerJS 1.5.5, MIT. License: PEERJS-LICENSE.txt.
+- PeerJS bundled dependencies: @msgpack/msgpack (ISC), eventemitter3 (MIT), peerjs-js-binarypack (MIT), sdp (MIT), and webrtc-adapter (BSD-3-Clause). License texts are included beside this file.
+- qrcode 1.5.4, MIT. It bundles dijkstrajs (MIT). License texts are included beside this file.
+- JSZip 3.10.1, dual licensed under MIT or GPL-3.0-or-later; PocketBridge uses it under MIT. It bundles lie (MIT), pako (MIT and Zlib), and setimmediate (MIT). License texts are included beside this file.
+
+The minified browser bundles are peerjs.min.js, qrcode.min.js, and jszip.min.js. The files retain the third-party copyrights and notices listed above.

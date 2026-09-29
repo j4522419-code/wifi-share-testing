@@ -592,6 +592,12 @@ public partial class MainWindow : Window
         Process.Start(new ProcessStartInfo("explorer.exe", _downloadDirectory) { UseShellExecute = true });
     }
 
+    private void SendAnywhere_Click(object sender, RoutedEventArgs e)
+    {
+        var window = new CrossNetworkWindow { Owner = this };
+        window.ShowDialog();
+    }
+
     private void SetStatus(string text, bool error = false)
     {
         if (_closing || !Dispatcher.CheckAccess())

@@ -1,0 +1,12 @@
+<Window x:Class="PocketBridgeDotNet.CrossNetworkWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="PocketBridge — send anywhere" Height="820" Width="900" MinHeight="620" MinWidth="620"
+        Background="#F4F6FA" WindowStartupLocation="CenterOwner">
+  <Grid Margin="12">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+    <TextBlock Margin="4,0,4,10" Text="Direct mode connects over the internet without a file relay. Your public IP may be visible to the other device, and some networks can block direct connections." TextWrapping="Wrap" Foreground="#657187"/>
+    <wv2:WebView2 x:Name="TransferBrowser" Grid.Row="1"/>
+  </Grid>
+</Window>

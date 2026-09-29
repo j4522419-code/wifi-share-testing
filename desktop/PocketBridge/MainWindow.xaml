@@ -19,12 +19,12 @@
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="16"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <StackPanel>
       <TextBlock Text="PocketBridge" FontSize="28" FontWeight="Bold" Foreground="#172033"/>
-      <TextBlock Text="Send files between this PC, your phone, and other devices on the same Wi-Fi." Margin="0,4,0,0" FontSize="13" Foreground="#657187"/>
+      <TextBlock Text="Send nearby over Wi-Fi, or pair directly with devices anywhere using the internet." Margin="0,4,0,0" FontSize="13" Foreground="#657187"/>
     </StackPanel>
     <Border Grid.Row="2" Background="White" CornerRadius="12" BorderBrush="#E1E6EF" BorderThickness="1" Padding="20">
       <Grid>
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-        <TextBlock Text="Available devices" FontSize="17" FontWeight="SemiBold" Foreground="#172033"/>
+        <TextBlock Text="Nearby devices (same Wi-Fi)" FontSize="17" FontWeight="SemiBold" Foreground="#172033"/>
         <TextBlock Grid.Row="1" x:Name="ThisDeviceText" Text="This device" Margin="0,4,0,14" Foreground="#69758A"/>
         <DataGrid Grid.Row="2" x:Name="DeviceGrid" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                   HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#EEF1F5"
@@ -45,10 +45,11 @@
       </Grid>
     </Border>
     <Grid Grid.Row="3" Margin="0,14,0,0">
-      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
       <TextBlock x:Name="StatusText" Text="Starting local device discovery…" VerticalAlignment="Center" Foreground="#596579" TextTrimming="CharacterEllipsis"/>
-      <Button Grid.Column="1" Content="Open received files" Click="OpenFolder_Click"/>
-      <Button Grid.Column="2" Content="Quick connect QR…" Margin="0" Click="PairButton_Click"/>
+      <Button Grid.Column="1" Content="Send anywhere…" Click="SendAnywhere_Click"/>
+      <Button Grid.Column="2" Content="Open received files" Click="OpenFolder_Click"/>
+      <Button Grid.Column="3" Content="Quick connect QR…" Margin="0" Click="PairButton_Click"/>
     </Grid>
   </Grid>
 </Window>
